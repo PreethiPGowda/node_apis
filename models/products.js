@@ -44,8 +44,10 @@ const productsSchema = new mongoose.Schema({
     },
     measuringUnit: {
         type: String
-    }
-});
+    },
+}, {timestamps: true});
+
+productsSchema.index({"$**":"text"});
 
 productsSchema.statics.productDetails = async function(id) {
     const product = await this.findOne({ "_id": id });
@@ -58,7 +60,16 @@ productsSchema.statics.productDetails = async function(id) {
 
 
 productsSchema.statics.getProductsList = async function() {
-    const product = await this.find({});
+    const product = await this.find({}).sort({"productName":1});
+    if (product) {
+        console.log(product);
+        return product;
+    }
+    throw Error("No products found");
+};
+
+productsSchema.statics.searchProductsList = async function(name) {
+    const product = await this.find({ $text: { $search: name }}).sort({"productName":1});;
     if (product) {
         console.log(product);
         return product;
@@ -69,6 +80,7 @@ productsSchema.statics.getProductsList = async function() {
 
 
 
-const Product = mongoose.model('product', productsSchema);
+const Product = mongoose.model('product', productsSchema)
+
 
 module.exports = Product;

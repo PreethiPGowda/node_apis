@@ -1,6 +1,7 @@
 const User = require("../models/user");
 const jwt = require('jsonwebtoken');
 const { db } = require("../models/user");
+const bcrypt = require('bcrypt');
 
 
 //handle errors
@@ -90,13 +91,7 @@ module.exports.get_user = async(req, res) => {
         const userId = req.userid;
         const data = await User.userDetails(userId);
         res.status(200).json({
-            result: {
-                email: data.email,
-                username: data.username,
-                phone: data.phone,
-                gender: data.gender,
-                userId: data._id
-            },
+            result: data,
             status: "Success"
         });
 
@@ -113,18 +108,12 @@ module.exports.update_user = async(req, res) => {
     try {
 
         const userId = req.userid;
-        const updates = { $set: req.body }
-        const options = { upsert: true, new: true };
-        const result = await User.findOneAndUpdate(userId, updates, options);
+        const updates = { $set: req.body };
+        const options = { upsert: true, new: true , useFindAndModify : false,projection: {"password":0,"__v":0}}
+        const result = await User.findOneAndUpdate(userId, updates,options);
 
         res.status(200).json({
-            result: {
-                email: result.email,
-                username: result.username,
-                phone: result.phone,
-                gender: result.gender,
-                userId: result._id
-            },
+            result: result,
             status: "Successfully updated"
         });
 
@@ -134,5 +123,51 @@ module.exports.update_user = async(req, res) => {
         const errors = handleErrors(err);
         res.status(400).json({ result: errors, status: "Failure" });
 
+    }
+}
+
+module.exports.update_password = async(req, res) => {
+    try {
+
+        const userId = req.userid;
+    // const salt = await bcrypt.genSalt();
+    //    req.body.password = await bcrypt.hash(req.body.password, salt);
+        const updates = { "password": req.body.password };
+        const options = { upsert: true, new: true , useFindAndModify : false, projection: {"password":0,"__v":0}}
+        const result = await User.findOneAndUpdate(userId, updates ,options);
+
+        res.status(200).json({
+            result: result,
+            status: "Successfully updated"
+        });
+
+
+
+    } catch (err) {
+        const errors = handleErrors(err);
+        res.status(400).json({ result: errors, status: "Failure" });
+
+    }
+}
+
+module.exports.search_user = async(req, res) => {
+
+    const { name } = req.query;
+
+    try {
+       
+        const data = await User.searchUsers(name);
+        res.status(200).json({
+            result: {
+                users:data,
+                noOfUsers:data.length            },
+            status: "Success"
+        });
+
+
+
+    } catch (err) {
+        console.log(err);
+        res.status(400).json({ result: err.message, status: "Failure" });
     }
 }

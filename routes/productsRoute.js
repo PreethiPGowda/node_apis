@@ -14,5 +14,8 @@ route.patch('/details/update/:id', checkToken, productsController.update_product
 
 route.delete('/delete/:id', checkToken, productsController.delete_product);
 
+route.get('/list/search', productsController.search_productslist);
+
+// route.patch('/details/update/:id', checkToken, productsController.update_product);
 
 module.exports = route;

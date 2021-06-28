@@ -1,3 +1,4 @@
+
 const mongoose = require('mongoose');
 const { isEmail , isMobilePhone} = require('validator');
 const bcrypt = require('bcrypt');
@@ -28,11 +29,20 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: [true, "Please enter Gender"],
     }
-});
+}
+,{timestamps: true});
+
+userSchema.index({"$**":"text"});
 
 
 //fire function before getting saved
 userSchema.pre('save', async function(next) {
+    const salt = await bcrypt.genSalt();
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+});
+
+userSchema.pre('update', async function(next) {
     const salt = await bcrypt.genSalt();
     this.password = await bcrypt.hash(this.password, salt);
     next();
@@ -56,7 +66,8 @@ userSchema.statics.login = async function(email, password) {
 
 userSchema.statics.userDetails = async function(id) {
     console.log(id);
-    const user = await this.findOne({"_id":id});
+    const projection = {password:0};
+    const user = await this.findOne({"_id":id},{"password":0,"__v":0});
     if (user) {
         console.log(user);
             return user;
@@ -64,9 +75,15 @@ userSchema.statics.userDetails = async function(id) {
     throw Error("User doesn't exist");
 }
 
+userSchema.statics.searchUsers = async function(name) {
+    const user = await this.find({ $text: { $search: name }},{"password":0,"__v":0}).sort({"username":1});;
+    if (user) {
+        console.log(user);
+        return user;
+    }
+    throw Error("No user found");
+};
+
 const User = mongoose.model('user', userSchema);
 
 module.exports = User;
-
-
-

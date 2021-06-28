@@ -133,3 +133,25 @@ module.exports.delete_product = async(req, res) => {
 
     }
 }
+
+module.exports.search_productslist = async(req, res) => {
+
+    const { name } = req.query;
+
+    try {
+       
+        const data = await Product.searchProductsList(name);
+        res.status(200).json({
+            result: {
+                products:data,
+                noOfProducts:data.length            },
+            status: "Success"
+        });
+
+
+
+    } catch (err) {
+        console.log(err);
+        res.status(400).json({ result: err.message, status: "Failure" });
+    }
+}
